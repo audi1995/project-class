@@ -2,6 +2,7 @@ const { User } = require('../models/index.model')
 const validator = require("../helpers/validation")
 const bcrypt = require("bcrypt");
 var jwt = require("jsonwebtoken");
+saltRounds = 10;
 var { generateWebToken } = require("../middlewares/jwt");
 
 
@@ -46,25 +47,31 @@ exports.create = async (req, res) => {
 
 exports.index = async (req, res) => {
     try {
-        let page = req.query.page ? parseInt(req.query.page) : 1;
-        let limit = req.query.limit ? parseInt(req.query.limit) : 3;
-        let skip = page > 1 ? (page - 1) * limit : 0;
+        if (req.userdata.role == "admin") {
+            let page = req.query.page ? parseInt(req.query.page) : 1;
+            let limit = req.query.limit ? parseInt(req.query.limit) : 3;
+            let skip = page > 1 ? (page - 1) * limit : 0;
 
-        await User.find().skip(skip).limit(limit).then((docs) => {
-            res.status(200).json({
-                message: "User retrieved",
-                status: true,
-                data: docs
-            })
-        })
-            .catch((err) => {
-                res.statu422s().json({
-                    message: err.message,
-                    status: false
+            await User.find().skip(skip).limit(limit).then((docs) => {
+                res.status(200).json({
+                    message: "User retrieved",
+                    status: true,
+                    data: docs
                 })
-            });
-    } catch (err) {
-        res.statu422s().json(err)
+            })
+                .catch((err) => {
+                    res.statu422s().json({
+                        message: err.message,
+                        status: false
+                    })
+                });
+        }
+        else {
+            res.status(422).json(err)
+        }
+    }
+    catch (err) {
+        res.status(422).json(err)
     }
 }
 
@@ -150,9 +157,9 @@ exports.destroy = async (req, res) => {
     try {
         let authUser = req.userdata;
         docId = req.params.id;
-        console.log(authUser, docId);
+        console.log("authUser", authUser,docId);
 
-        if (authUser.Account_type === "Admin") {
+        if (authUser.role == "admin") {
             await User
                 .deleteOne({ _id: docId })
                 .then((docs) => {
@@ -171,7 +178,7 @@ exports.destroy = async (req, res) => {
                 });
         } else {
             res.status(422).json({
-                message: err.message,
+                message: "err.message",
                 status: false
             })
         }
@@ -180,7 +187,7 @@ exports.destroy = async (req, res) => {
             message: err.message,
             status: false
         })
-}
+    }
 };
 
 

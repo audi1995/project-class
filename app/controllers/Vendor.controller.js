@@ -10,6 +10,7 @@ exports.create = async (req, res) => {
     try {
         let result = validator.both(req.body)
         if (result.status === false) {
+            console.log("hbcfd");
             res.status(401).json(result);
         } else {
             let count = await Vendor.countDocuments({
@@ -22,18 +23,18 @@ exports.create = async (req, res) => {
                 })
             } else {
                 req.body.password = await bcrypt.hash(req.body.password, saltRounds);
+                console.log("req.body.password", req.body.password);
                 await Vendor(req.body)
                     .save()
                     .then((docs) => {
-                        res.status(201).json({
+                        res.status(200).json({
                             message: "vendor created successfully",
                             status: true,
                             data: docs
                         })
-                    })
-                    .catch((err) => {
-                        res.status(401).json({
-                            mesaage: "vendor already exists.",
+                    }).catch((err) => {
+                        res.status(422).json({
+                            message: err.message,
                             status: false
                         })
                     });
@@ -98,65 +99,55 @@ exports.show = async (req, res) => {
 
 exports.update = async (req, res) => {
     try {
-        if (req.userdata.role == "admin") {
-
+        if (req.userdata.role === "vendor" || req.userdata.role === "admin") {
             let result = validator.both(req.body);
             if (result.status === false) {
                 res.status(401).json(result);
             } else {
                 let object = {};
-                if (req.body.email && req.body.email != "") {
+                if (req.body.email && req.body.email !== "")
                     object.email = req.body.email;
-                    if (req.body.phone && req.body.phone != "") {
-                        object.phone = req.body.phone;
-                    }
-                    if (req.body.name && req.body.name != "") {
-                        object.name = req.body.name;
-                        if (req.body.gender && req.body.gender != "")
-                            object.gender = req.body.gender;
-                        if (req.body.name && req.body.name != "")
-                            object.name = req.body.name;
-                        if (req.body.address && req.body.address != "")
-                            object.address = req.body.address;
-                        if (req.body.gstNo && req.body.gstNo != "")
-                            object.gstNo = req.body.gstNo;
-                            
-                        {
-                            console.log("req.params", req.params);
-                            console.log("req.userdata.id", req.userdata.id);
+                if (req.body.phone && req.body.phone !== "")
+                    object.phone = req.body.phone;
 
-                            if (req.userdata.id === req.params.id) {
-                                console.log("object", object);
+                if (req.body.name && req.body.name !== "")
+                    object.name = req.body.name;
+                if (req.body.gender && req.body.gender !== "")
+                    object.gender = req.body.gender;
+                if (req.body.name && req.body.name !== "")
+                    object.name = req.body.name;
+                if (req.body.address && req.body.address !== "")
+                    object.address = req.body.address;
+                if (req.body.gstNo && req.body.gstNo !== "")
+                    object.gstNo = req.body.gstNo;
 
-                                await Vendor
-                                    .updateOne({ _id: req.params.id }, { $set: object })
-                                    .then((docs) => {
-                                        res.status(200).json({
-                                            message: "vendor updated successfully",
-                                            status: true,
-                                            data: docs
-                                        })
-                                    })
-                                    .catch((err) => {
-                                        res.status(401).json({
-                                            message: err.message, status: false
-                                        })
-                                    });
-                            } else {
-                                res.status(422).json({
-                                    message: err.message, status: false
-                                })
-                            }
-                        }
-                    }
-                }
-
+                await Vendor
+                    .updateOne({ _id: req.params.id }, { $set: object })
+                    .then((result) => {
+                        res.status(200).json({
+                            message: "Vendor updated successfully",
+                            status: true,
+                            data: result
+                        });
+                    })
+                    .catch((err) => {
+                        res.status(401).json({
+                            message: err.message,
+                            status: false
+                        });
+                    });
             }
+        } else {
+            res.status(401).json({
+                message: "Only vendors or admins can update vendor profiles",
+                status: false
+            });
         }
     } catch (err) {
-        res.status(422).json(err)
+        res.status(422).json(err);
     }
-}
+};
+
 
 
 exports.destroy = async (req, res) => {
