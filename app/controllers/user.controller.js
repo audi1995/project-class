@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 var jwt = require("jsonwebtoken");
 saltRounds = 10;
 var { generateWebToken } = require("../middlewares/jwt");
+const emailSender = require('../helpers/nodemailer');
 
 
 exports.create = async (req, res) => {
@@ -22,21 +23,34 @@ exports.create = async (req, res) => {
                 })
             } else {
                 req.body.password = await bcrypt.hash(req.body.password, saltRounds);
-                await User(req.body)
-                    .save()
-                    .then((docs) => {
-                        res.status(201).json({
-                            message: "User created successfully",
-                            status: true,
-                            data: docs
-                        })
+                let user = await User(req.body).save()
+                if (!user){
+                    res.status(401).json({
+                        message: "user not created",
+                        status: false
                     })
-                    .catch((err) => {
-                        res.status(401).json({
-                            mesaage: "user already exists.",
-                            status: false
-                        })
-                    });
+                }else{
+                    console.log(user.email);
+                    emailSender.sendEmail(user.email)
+                    res.status(200).json({
+                        message: "user created successfully.",
+                        data: user
+                    })
+                }
+                    // .then((docs) => {
+                    //     emailSender.sendEmail(docs.email)
+                    //     res.status(201).json({
+                    //         message: "User created successfully",
+                    //         status: true,
+                    //         data: docs
+                    //     })
+                    // })
+                    // .catch((err) => {
+                    //     res.status(401).json({
+                    //         mesaage: "user already exists.",
+                    //         status: false
+                    //     })
+                    // });
             }
         }
     } catch (err) {
