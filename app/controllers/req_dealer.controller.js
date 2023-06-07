@@ -3,7 +3,7 @@ const { Req_Dealer } = require('../models/index.model')
 exports.create = async (req, res) => {
     try {
         let result = req.userdata;
-        if (result.userdata.role !== "dealer") {
+        if (result.role !== "dealer") {
             res.status(401).json(result);
         } else {
             await Req_Dealer(req.body)
@@ -31,7 +31,7 @@ exports.create = async (req, res) => {
 exports.index = async (req, res) => {
     try {
         let result = req.userdata;
-        if (result.userdata.role == "admin" || result.userdata.role == "vendor") {
+        if (result.role == "admin" || result.role == "dealer") {
             await Req_Dealer.find().then((docs) => {
                 res.status(200).json({
                     message: "dealer requirment retrieved successfully",
@@ -86,62 +86,75 @@ exports.show = async (req, res) => {
 
 
 exports.update = async (req, res) => {
-    let result = req.userdata;
-    if (req.userdata.role === "dealer" || req.userdata.role === "admin") {
-        try {
-            let req_status = await Req_Dealer.findOne({ _id: req.params.id })
-            if (req_status.status === "approved") {
-                res.status(401).json({
-                    message: "now you can't update dealer requirment",
-                    status: false
-                })
+    try {
+        if (req.userdata.role == "dealer" && req.userdata.id == req.body.dealer) {
+            let object = {};
+            if (req.body.product && req.body.product !== "") {
+                object.product = req.body.product;
             }
-            else {
-                let object = {};
-                if (req.body.product && req.body.product !== "") {
-                    object.product = req.body.product;
-                }
-                if (req.body.quantity && req.body.quantity !== "") {
-                    object.quantity = req.body.quantity;
-                }
-                if (req.body.description && req.body.description !== "") {
-                    object.description = req.body.description;
-                }
-                if (req.body.closedOn && req.body.closedOn !== "") {
-                    object.closedOn = req.body.closedOn;
-                }
-                if (req.body.status && req.body.status !== "") {
-                    object.status = req.body.status;
-                }
-                const updatedproduct = await Req_Dealer.findByIdAndUpdate(
-                    req.params.id,
-                    { $set: object },
-                    { new: true }
-                );
+            if (req.body.quantity && req.body.quantity !== "") {
+                object.quantity = req.body.quantity;
+            }
+            if (req.body.description && req.body.description !== "") {
+                object.description = req.body.description;
+            }
+            if (req.body.model_name && req.body.model_name !== "") {
+                object.model_name = req.body.model_name;
+            }
+            if (req.body.color && req.body.color !== "") {
+                object.color = req.body.color;
+            }
+            const updatedrequest = await Req_Dealer.findByIdAndUpdate(
+                req.params.id,
+                { $set: object },
+                { new: true }
+            );
 
-                if (updatedproduct) {
-                    res.status(200).json({
-                        message: "dealer requirment updated successfully",
-                        status: true,
-                        data: updatedVendor
-                    });
-                } else {
-                    res.status(404).json({
-                        message: "dealer requirment not found",
-                        status: false
-                    });
-                }
+            if (updatedrequest) {
+                res.status(200).json({
+                    message: "dealer requirment updated successfully",
+                    status: true,
+                    data: updatedrequest
+                });
+            } else {
+                res.status(404).json({
+                    message: "dealer requirment not found",
+                    status: false
+                });
             }
-        }
-        catch (err) {
-            res.status(500).json({
-                message: "Internal server error",
+        } else if (req.userdata.role === "admin") {
+            let object = {};
+            if (req.body.status && req.body.status !== "") {
+                object.status = req.body.status;
+            }
+
+            const updatedrequest = await Req_Dealer.findByIdAndUpdate(
+                req.params.id,
+                { $set: object },
+                { new: true }
+            );
+
+            if (updatedrequest) {
+                res.status(200).json({
+                    message: "dealer requirment updated successfully",
+                    status: true,
+                    data: updatedrequest
+                });
+            } else {
+                res.status(404).json({
+                    message: "dealer requirment not found",
+                    status: false
+                });
+            }
+        } else {
+            res.status(401).json({
+                message: "Only admin or dealer can update dealer requirment",
                 status: false
             });
         }
-    } else {
-        res.status(401).json({
-            message: "Only admin can update dealer requirment",
+    } catch (err) {
+        res.status(500).json({
+            message: "Internal server error",
             status: false
         });
     }
@@ -150,15 +163,14 @@ exports.update = async (req, res) => {
 
 
 exports.destroy = async (req, res) => {
-    let result = req.userdata;
-    if (req.userdata.role != "dealer") {
+    if (req.userdata.role != "dealer" && req.userdata.id == req.body.dealer) {
         res.status(401).json({
             message: "You are not allowed to delete dealer requirment",
             status: false
         })
     }
     else {
-        await Req_Dealer.deleteOne({ _id: docId }).then((docs) => {
+        await Req_Dealer.deleteOne({ _id: req.params.id }).then((docs) => {
             res.status(200).json({
                 message: "dealer requirment deleted successfully",
                 status: true,
@@ -173,5 +185,4 @@ exports.destroy = async (req, res) => {
         }
         )
     }
-
 }

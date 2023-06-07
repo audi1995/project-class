@@ -7,7 +7,7 @@ let req_dealer_Schema = new Schema({
     quantity: { type: Number, required: true },
     color: { type: String, required: true },
     description: { type: String, required: true},
-    status: { type: String, enum: ["approved", "rejected", "onHold"], required: true},
+    status: { type: String, enum: ["approved", "rejected","pending", "onHold"], required: true, default: "pending"},
     dealer: { type: Schema.Types.ObjectId, ref: 'Vendor'}
 }, {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" }

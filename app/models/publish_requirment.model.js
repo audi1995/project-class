@@ -6,7 +6,7 @@ let publish_Requirment_Schema = new Schema({
     quantity: { type: Number, required: true },
     description: { type: String, required: true},
     closedOn: { type: Date, required: true},
-    status: { type: String, enum: ["open", "closed"],  required: true}
+    status: { type: String, enum: ["open", "closed"],  required: true, default: "open"}
 }, {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" }
 });

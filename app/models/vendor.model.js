@@ -8,8 +8,8 @@ let VendorSchema = new Schema({
     phone: { type: String, required: true },
     address: { type: String, required: true},
     gstNo: { type: String, required: true},
-    role: { type: String, required: true, enum: ["vendor", "dealer", "supplier" ] },
-    isApproved: {type: String, required: true, enum : ["pending", "approved", "rejected"]},
+    role: { type: String, required: true, enum: ["vendor", "dealer" ] },
+    isApproved: {type: String, required: true, enum : ["pending", "approved", "rejected"], default: "pending"}
 
 }, {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" }

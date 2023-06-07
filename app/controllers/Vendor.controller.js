@@ -23,7 +23,7 @@ exports.create = async (req, res) => {
                 })
             } else {
                 req.body.password = await bcrypt.hash(req.body.password, saltRounds);
-                console.log("req.body.password", req.body.password);
+                
                 await Vendor(req.body)
                     .save()
                     .then((docs) => {
