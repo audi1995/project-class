@@ -1,4 +1,5 @@
 const { User_order } = require('../models/index.model')
+const{createInvoice}= require("../helpers/invoice")
 
 exports.create = async (req, res) => {
     try {
@@ -8,6 +9,7 @@ exports.create = async (req, res) => {
                 status: false
             })
         } else {
+            let invoice = await createInvoice();
             await User_order(req.body)
                 .save()
                 .then((docs) => {

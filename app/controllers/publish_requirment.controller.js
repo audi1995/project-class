@@ -33,7 +33,11 @@ exports.index = async (req, res) => {
         let result = req.userdata;
         console.log("bhfv", result);
         if (result.role == "admin" || result.role == "vendor") {
-            await Publish_Requirment.find().then((docs) => {
+            let page = req.query.page ? parseInt(req.query.page) : 1;
+            let limit = req.query.limit ? parseInt(req.query.limit) : 5;
+            let skip = page > 1 ? (page - 1) * limit : 0;
+
+            await Publish_Requirment.find().skip(skip).limit(limit).then((docs) => {
                 res.status(200).json({
                     message: "requirment retrieved successfully",
                     data: docs,

@@ -34,7 +34,11 @@ exports.index = async (req, res) => {
     try {
         let result = req.userdata;
         if (result.role == "admin" || result.role == "vendor") {
-            await Vendor_Po.find().then((docs) => {
+            let page = req.query.page ? parseInt(req.query.page) : 1;
+            let limit = req.query.limit ? parseInt(req.query.limit) : 5;
+            let skip = page > 1 ? (page - 1) * limit : 0;
+
+            await Vendor_Po.find().skip(skip).limit(limit).then((docs) => {
                 res.status(200).json({
                     message: "Vendor_Po retrieved successfully",
                     data: docs,

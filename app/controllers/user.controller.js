@@ -24,33 +24,33 @@ exports.create = async (req, res) => {
             } else {
                 req.body.password = await bcrypt.hash(req.body.password, saltRounds);
                 let user = await User(req.body).save()
-                if (!user){
+                if (!user) {
                     res.status(401).json({
                         message: "user not created",
                         status: false
                     })
-                }else{
+                } else {
                     console.log(user.email);
-                    emailSender.sendEmail(user.email, `Greetings from our company`,`Hello, ${user.name} Welcom to our website`, )
+                    emailSender.sendEmail(user.email, `Greetings from our company`, `Hello, ${user.name} Welcom to our website`,)
                     res.status(200).json({
                         message: "user created successfully.",
                         data: user
                     })
                 }
-                    // .then((docs) => {
-                    //     emailSender.sendEmail(docs.email)
-                    //     res.status(201).json({
-                    //         message: "User created successfully",
-                    //         status: true,
-                    //         data: docs
-                    //     })
-                    // })
-                    // .catch((err) => {
-                    //     res.status(401).json({
-                    //         mesaage: "user already exists.",
-                    //         status: false
-                    //     })
-                    // });
+                // .then((docs) => {
+                //     emailSender.sendEmail(docs.email)
+                //     res.status(201).json({
+                //         message: "User created successfully",
+                //         status: true,
+                //         data: docs
+                //     })
+                // })
+                // .catch((err) => {
+                //     res.status(401).json({
+                //         mesaage: "user already exists.",
+                //         status: false
+                //     })
+                // });
             }
         }
     } catch (err) {
@@ -63,7 +63,7 @@ exports.index = async (req, res) => {
     try {
         if (req.userdata.role == "admin") {
             let page = req.query.page ? parseInt(req.query.page) : 1;
-            let limit = req.query.limit ? parseInt(req.query.limit) : 3;
+            let limit = req.query.limit ? parseInt(req.query.limit) : 5;
             let skip = page > 1 ? (page - 1) * limit : 0;
 
             await User.find().skip(skip).limit(limit).then((docs) => {
@@ -171,9 +171,7 @@ exports.destroy = async (req, res) => {
     try {
         let authUser = req.userdata;
         docId = req.params.id;
-        console.log("authUser", authUser,docId);
-
-        if (authUser.role == "admin") {
+        if (authUser.role == "admin"){
             await User
                 .deleteOne({ _id: docId })
                 .then((docs) => {

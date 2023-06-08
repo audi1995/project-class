@@ -1,4 +1,5 @@
 const { vendor_bills } = require('../models/index.model')
+const{createInvoice}= require("../helpers/invoice")
 
 exports.create = async (req, res) => {
     try {
@@ -8,6 +9,7 @@ exports.create = async (req, res) => {
                 status: false
             })
         } else {
+            let invoice = await createInvoice();
             await vendor_bills(req.body)
                 .save()
                 .then((docs) => {
@@ -37,8 +39,11 @@ exports.index = async (req, res) => {
                 status: false
             })
         } else {
+            let page = req.query.page ? parseInt(req.query.page) : 1;
+            let limit = req.query.limit ? parseInt(req.query.limit) : 5;
+            let skip = page > 1 ? (page - 1) * limit : 0;
 
-            const bill = await vendor_bills.find();
+            const bill = await vendor_bills.find().skip(skip).limit(limit);
             if (!bill) {
                 res.status(404).json({
                     message: "bill not found",

@@ -35,7 +35,11 @@ exports.create = async (req, res) => {
 
 exports.index = async (req, res) => {
     try {
-        await Product.find().then((docs) => {
+        let page = req.query.page ? parseInt(req.query.page) : 1;
+        let limit = req.query.limit ? parseInt(req.query.limit) : 5;
+        let skip = page > 1 ? (page - 1) * limit : 0;
+
+        await Product.find().skip(skip).limit(limit).then((docs) => {
             res.status(200).json({
                 message: "vendor retrieved successfully",
                 data: docs,

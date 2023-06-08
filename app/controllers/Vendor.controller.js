@@ -50,8 +50,11 @@ exports.index = async (req, res) => {
     try {
         console.log("req.userdata", req.userdata);
         if (req.userdata.role == "admin") {
+            let page = req.query.page ? parseInt(req.query.page) : 1;
+            let limit = req.query.limit ? parseInt(req.query.limit) : 5;
+            let skip = page > 1 ? (page - 1) * limit : 0;
 
-            await new Product.find().then((docs) => {
+            await new Product.find().skip(skip).limit(limit).then((docs) => {
                 res.status(200).json({
                     message: "vendor retrieved",
                     status: true,

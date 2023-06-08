@@ -39,9 +39,11 @@ exports.index = async (req, res) => {
                 message: "invalid dealer",
                 status: false
             })
-        } else {
-
-            const bill = await Dealer_bills.find();
+        } else {            
+            let page = req.query.page ? parseInt(req.query.page) : 1;
+            let limit = req.query.limit ? parseInt(req.query.limit) : 5;
+            let skip = page > 1 ? (page - 1) * limit : 0;
+            const bill = await Dealer_bills.find().skip(skip).limit(limit);
             if (!bill) {
                 res.status(404).json({
                     message: "bill not found",
@@ -94,7 +96,6 @@ exports.show = async (req, res) => {
         });
     }
 };
-
 
 exports.update = async (req, res) => {
     try {

@@ -32,7 +32,10 @@ exports.index = async (req, res) => {
     try {
         let result = req.userdata;
         if (result.role == "admin" || result.role == "dealer") {
-            await Req_Dealer.find().then((docs) => {
+            let page = req.query.page ? parseInt(req.query.page) : 1;
+            let limit = req.query.limit ? parseInt(req.query.limit) : 5;
+            let skip = page > 1 ? (page - 1) * limit : 0;
+            await Req_Dealer.find().skip(skip).limit(limit).then((docs) => {
                 res.status(200).json({
                     message: "dealer requirment retrieved successfully",
                     data: docs,
