@@ -1,18 +1,18 @@
-const { User_order } = require('../models/index.model')
+const { vendor_bills } = require('../models/index.model')
 
 exports.create = async (req, res) => {
     try {
-        if (req.userdata.id !== req.body.user) {
-            res.status(100).json({
-                message: "invalid user",
+        if (req.userdata.role !== "admin") {
+            res.status(401).json({
+                message: "only admin can create vendors bill",
                 status: false
             })
         } else {
-            await User_order(req.body)
+            await vendor_bills(req.body)
                 .save()
                 .then((docs) => {
                     res.status(201).json({
-                        message: "order created successfully",
+                        message: "bill created successfully",
                         status: true,
                         data: docs,
                     });
@@ -29,31 +29,62 @@ exports.create = async (req, res) => {
     }
 };
 
-
-
-exports.show = async (req, res) => {
+exports.index = async (req, res) => {
     try {
-        if (req.userdata.id !== req.body.user) {
-            res.status(100).json({
-                message: "invalid user",
+        if (req.userdata.role !== "admin") {
+            res.status(401).json({
+                message: "invalid vendor",
                 status: false
             })
         } else {
 
-        const bill = await User_order.findById(req.params.id);
-        if (!bill) {
-            res.status(404).json({
-                message: "order not found",
-                status: false,
-            });
-        } else {
-            res.status(200).json({
-                message: "order retrieved successfully",
-                status: true,
-                data: bill,
-            });
+            const bill = await vendor_bills.find();
+            if (!bill) {
+                res.status(404).json({
+                    message: "bill not found",
+                    status: false,
+                });
+            } else {
+                res.status(200).json({
+                    message: "bill retrieved successfully",
+                    status: true,
+                    data: bill,
+                });
+            }
         }
-    } }catch (err) {
+    } catch (err) {
+        res.status(500).json({
+            message: err.message,
+            status: false,
+        });
+    }
+};
+
+
+exports.show = async (req, res) => {
+    try {
+        if (req.userdata.role !== "user") {
+            res.status(422).json({
+                message: "invalid vendor",
+                status: false
+            })
+        } else {
+
+            const bill = await vendor_bills.findById(req.params.id);
+            if (!bill) {
+                res.status(404).json({
+                    message: "bill not found",
+                    status: false,
+                });
+            } else {
+                res.status(200).json({
+                    message: "bill retrieved successfully",
+                    status: true,
+                    data: bill,
+                });
+            }
+        }
+    } catch (err) {
         res.status(500).json({
             message: err.message,
             status: false,
@@ -73,8 +104,16 @@ exports.update = async (req, res) => {
             if (req.body.total_price && req.body.total_price !== "") {
                 object.total_price = req.body.total_price;
             }
-
-            const updatedCart = await User_order.findByIdAndUpdate(
+            if (req.body.delivery_date && req.body.delivery_date !== "") {
+                object.delivery_date = req.body.delivery_date;
+            }
+            if (req.body.payment_status && req.body.payment_status !== "") {
+                object.payment_status = req.body.payment_status;
+            }
+            if (req.body.delivery_status && req.body.delivery_status !== "") {
+                object.delivery_status = req.body.delivery_status;
+            }
+            const updatedCart = await vendor_bills.findByIdAndUpdate(
                 req.params.id,
                 { $set: object },
                 { new: true }
@@ -82,13 +121,13 @@ exports.update = async (req, res) => {
 
             if (updatedCart) {
                 res.status(200).json({
-                    message: "order updated successfully",
+                    message: "bill updated successfully",
                     status: true,
                     data: updatedCart,
                 });
             } else {
                 res.status(404).json({
-                    message: "order not found",
+                    message: "bill not found",
                     status: false,
                 });
             }
@@ -111,14 +150,14 @@ exports.destroy = async (req, res) => {
     try {
         if (req.userdata.role !== "admin") {
             res.status(401).json({
-                message: "You are not allowed to delete order",
+                message: "You are not allowed to delete bill",
                 status: false
             });
         } else {
-            await User_order.deleteOne({ _id: req.params.id })
+            await vendor_bills.deleteOne({ _id: req.params.id })
                 .then(() => {
                     res.status(200).json({
-                        message: "order deleted successfully",
+                        message: "bill deleted successfully",
                         status: true,
                         data: {}
                     });

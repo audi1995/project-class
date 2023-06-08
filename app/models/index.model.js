@@ -6,6 +6,8 @@ const Vendor_Po = require('./vendors_po.model')
 const Req_Dealer = require("./req_dealer.model")
 const Cart = require("./cart.model")
 const User_order = require('./user_orders.model')
+const vendor_bills = require('./vendor_bills.model')
+const Dealer_bills = require('./dealer_bills.model')
 
 exports.User = User;
 exports.Vendor = Vendor;
@@ -15,3 +17,5 @@ exports.Vendor_Po = Vendor_Po;
 exports.Req_Dealer = Req_Dealer;
 exports.Cart = Cart;
 exports.User_order= User_order;
+exports.vendor_bills = vendor_bills;
+exports.Dealer_bills= Dealer_bills;

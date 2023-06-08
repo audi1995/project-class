@@ -1,9 +1,9 @@
 const router = require("express").Router();
-const {create, index, show, update, destroy, login} = require('../controllers/user_order.controller')
+const {create, index, show, update, destroy, } = require('../controllers/dealer.bills.controller')
 const{verifyWebToken} = require('../middlewares/jwt')
 
 router.post('/', verifyWebToken, create)
-// router.get('/',verifyWebToken, index)
+router.get('/',verifyWebToken, index)
 router.get('/:id',verifyWebToken, show)
 router.patch('/:id', verifyWebToken,update)
 router.delete('/:id',verifyWebToken, destroy)
