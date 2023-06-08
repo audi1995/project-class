@@ -1,15 +1,8 @@
+const { response } = require('express');
 const { Cart } = require('../models/index.model')
 
 exports.create = async (req, res) => {
     try {
-        let products = req.body.products;
-        let total_price = 0;
-        for (let i = 0; i < products.length; i++) {
-            let price = products[i].product.price * products[i].quantity;
-            total_price += price;
-        }
-        let amount = req.body;
-        amount.total_price = total_price;
         await Cart(amount)
             .save()
             .then((docs) => {
@@ -34,30 +27,35 @@ exports.create = async (req, res) => {
 
 exports.show = async (req, res) => {
     try {
-        {
-            await Cart.findById({ _id: req.params.id }).then((docs) => {
-                res.status(200).json({
-                    message: "cart retrieved successfully",
-                    data: docs,
-                    status: true
-                })
-            }).catch((err) => {
-                res.status(422).json({
-                    message: err.message,
-                    status: false
-                })
-            })
+      const cart = await Cart.findById(req.params.id);
+      if (!cart) {
+        res.status(404).json({
+          message: "Cart not found",
+          status: false,
+        });
+      } else {
+        let total_price = 0;
+        for (let i = 0; i < cart.products.length; i++) {
+          let price = cart.products[i].product.price * cart.products[i].quantity;
+          total_price += price;
         }
+        cart.total_price = total_price;
+  
+        res.status(200).json({
+          message: "Cart retrieved successfully",
+          status: true,
+          data: cart,
+        });
+      }
+    } catch (err) {
+      res.status(500).json({
+        message: err.message,
+        status: false,
+      });
     }
-    catch (err) {
-        res.status(500).json({
-            message: err.message,
-            status: false
-        })
-    }
-}
+  };
 
-
+  
 exports.update = async (req, res) => {
     try {
         if (req.userdata.role == "user") {

@@ -31,7 +31,7 @@ exports.create = async (req, res) => {
                     })
                 }else{
                     console.log(user.email);
-                    emailSender.sendEmail(user.email)
+                    emailSender.sendEmail(user.email, `Greetings from our company`,`Hello, ${user.name} Welcom to our website`, )
                     res.status(200).json({
                         message: "user created successfully.",
                         data: user
