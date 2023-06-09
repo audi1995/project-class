@@ -3,7 +3,8 @@ const { Cart } = require('../models/index.model')
 
 exports.create = async (req, res) => {
     try {
-        await Cart(amount)
+        console.log("req.userdata.id",req.userdata.id);
+        await Cart(req.body)
             .save()
             .then((docs) => {
                 res.status(201).json({
@@ -58,13 +59,14 @@ exports.show = async (req, res) => {
   
 exports.update = async (req, res) => {
     try {
-        if (req.userdata.role == "user") {
-            let object = {};
-
+        let user = await Cart.findOne({_id:req.params.id})
+        console.log(user.user);
+        console.log(req.userdata.id);
+        if (req.userdata.id == user.user) {
+            let object = {}
             if (req.body.products && req.body.products !== "") {
                 object.products = req.body.products;
             }
-
             const updatedcart = await Cart.findByIdAndUpdate(
                 req.params.id,
                 { $set: object },

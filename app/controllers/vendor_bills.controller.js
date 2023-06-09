@@ -69,6 +69,41 @@ exports.index = async (req, res) => {
     }
 };
 
+// exports.index = async (req, res) => {
+//     try {
+//         let page = req.query.page ? parseInt(req.query.page) : 1;
+//         let limit = req.query.limit ? parseInt(req.query.limit) : 5;
+//         let skip = page > 1 ? (page - 1) * limit : 0;
+//         const bill = await vendor_bills.find().skip(skip).limit(limit);
+//         console.log("hcsdbxj", bill[0].vendor_po);
+//         let po = await Vendor_Po.findOne({_id: bill[0].vendor_po})
+//         console.log("po.vendor", po);
+//         if (req.userdata.role !== "admin"|| req.userdata.id === po.vendor) {
+//             res.status(401).json({
+//                 message: "invalid vendor",
+//                 status: false
+//             })
+//         } else {
+//             if (!bill) {
+//                 res.status(404).json({
+//                     message: "bill not found",
+//                     status: false,
+//                 });
+//             } else {
+//                 res.status(200).json({
+//                     message: "bill retrieved successfully",
+//                     status: true,
+//                     data: bill,
+//                 });
+//             }
+//         }
+//     } catch (err) {
+//         res.status(500).json({
+//             message: err.message,
+//             status: false,
+//         });
+//     }
+// };
 
 exports.show = async (req, res) => {
     try {
@@ -78,9 +113,9 @@ exports.show = async (req, res) => {
                 status: false
             })
         } else {
-
             const bill = await vendor_bills.findById(req.params.id);
-            console.log(bill);
+            console.log(bill.data);
+
             if (!bill) {
                 res.status(404).json({
                     message: "bill not found",

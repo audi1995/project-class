@@ -11,7 +11,7 @@ exports.create = async (req, res) => {
                 status: false
             });
         }
-        let invoice = await createInvoice();
+        // let invoice = await createInvoice();
         await Dealer_bills(req.body)
             .save()
             .then((docs) => {
@@ -39,7 +39,7 @@ exports.index = async (req, res) => {
                 message: "invalid dealer",
                 status: false
             })
-        } else {            
+        } else {
             let page = req.query.page ? parseInt(req.query.page) : 1;
             let limit = req.query.limit ? parseInt(req.query.limit) : 5;
             let skip = page > 1 ? (page - 1) * limit : 0;
@@ -68,26 +68,21 @@ exports.index = async (req, res) => {
 
 exports.show = async (req, res) => {
     try {
-        if (req.userdata.role !== "dealer") {
-            res.status(422).json({
-                message: "invalid dealer",
-                status: false
-            })
-        } else {
-
-            const bill = await Dealer_bills.findById(req.params.id);
-            if (!bill) {
-                res.status(404).json({
-                    message: "bill not found",
-                    status: false,
-                });
-            } else {
+        const bill = await Dealer_bills.findById(req.params.id);
+        if (bill) {
+            if (req.userdata.role === "dealer" && req.userdata.id === bill.dealer) {
                 res.status(200).json({
                     message: "bill retrieved successfully",
                     status: true,
                     data: bill,
                 });
             }
+
+        } else {
+            res.status(404).json({
+                message: "bill not found",
+                status: false,
+            });
         }
     } catch (err) {
         res.status(500).json({

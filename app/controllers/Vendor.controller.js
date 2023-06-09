@@ -96,7 +96,7 @@ exports.show = async (req, res) => {
             }).catch((err) => {
                 res.status(422).json({
                     message: err.message,
-                    status: false
+                    status: false 
                 })
             })
         }

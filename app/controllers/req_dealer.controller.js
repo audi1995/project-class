@@ -1,9 +1,9 @@
-const { Req_Dealer } = require('../models/index.model')
+const { Req_Dealer, Vendor } = require('../models/index.model')
+const emailSender = require('../helpers/nodemailer');
 
 exports.create = async (req, res) => {
     try {
-        let result = req.userdata;
-        if (result.role !== "dealer") {
+        if (req.userdata.role !== "dealer") {
             res.status(401).json(result);
         } else {
             await Req_Dealer(req.body)
@@ -30,8 +30,7 @@ exports.create = async (req, res) => {
 
 exports.index = async (req, res) => {
     try {
-        let result = req.userdata;
-        if (result.role == "admin" || result.role == "dealer") {
+        if (req.userdata.role == "admin") {
             let page = req.query.page ? parseInt(req.query.page) : 1;
             let limit = req.query.limit ? parseInt(req.query.limit) : 5;
             let skip = page > 1 ? (page - 1) * limit : 0;
@@ -58,22 +57,27 @@ exports.index = async (req, res) => {
     }
 }
 
+
 exports.show = async (req, res) => {
     try {
         if (req.userdata.role == "dealer") {
-            await Req_Dealer.findById({ _id: req.params.id }).then((docs) => {
+            let requir = await Req_Dealer.findById({ _id: req.params.id })
+            console.log(requir.dealer);
+            console.log(req.userdata.id, "req.userdata.id");
+            if (req.userdata.id == requir.dealer) {
                 res.status(200).json({
-                    message: "dealer requirment retrieved successfully",
-                    data: docs,
-                    status: true
+                    message: "requirement retrievevd successfully",
+                    status: true,
+                    data: requir
                 })
-            }).catch((err) => {
-                res.status(422).json({
-                    message: err.message,
+            } else {
+                res.status(401).json({
+                    message: "unauthorised dealer",
                     status: false
                 })
-            })
-        } else {
+            }
+        }
+        else {
             res.status(500).json({
                 message: err.message,
                 status: false
@@ -90,7 +94,9 @@ exports.show = async (req, res) => {
 
 exports.update = async (req, res) => {
     try {
-        if (req.userdata.role == "dealer" && req.userdata.id == req.body.dealer) {
+        let rex = await Req_Dealer.findOne({_id: req.params.id})
+        let dealer = await Vendor.findOne({_id: rex.dealer})
+        if (req.userdata.role == "dealer" && req.userdata.id == rex.dealer) {
             let object = {};
             if (req.body.product && req.body.product !== "") {
                 object.product = req.body.product;
@@ -138,6 +144,7 @@ exports.update = async (req, res) => {
             );
 
             if (updatedrequest) {
+                emailSender.sendEmail(dealer.email, `Approved your required`, `Hello, ${dealer.company_name} your po has been approved`)
                 res.status(200).json({
                     message: "dealer requirment updated successfully",
                     status: true,
@@ -166,26 +173,33 @@ exports.update = async (req, res) => {
 
 
 exports.destroy = async (req, res) => {
-    if (req.userdata.role != "dealer" && req.userdata.id == req.body.dealer) {
-        res.status(401).json({
-            message: "You are not allowed to delete dealer requirment",
-            status: false
-        })
-    }
-    else {
+    try {
+        let rex = await Req_Dealer.findOne({ _id: req.params.id });
+
+        if (req.userdata.role !== "dealer" || req.userdata.id !== rex.dealer) {
+            res.status(401).json({
+                message: "You are not allowed to delete dealer requirement",
+                status: false
+            });
+            return;
+        }
+
         await Req_Dealer.deleteOne({ _id: req.params.id }).then((docs) => {
             res.status(200).json({
-                message: "dealer requirment deleted successfully",
+                message: "Dealer requirement deleted successfully",
                 status: true,
                 data: {}
-            })
-        }
-        ).catch((err) => {
+            });
+        }).catch((err) => {
             res.status(422).json({
                 message: err.message,
                 status: false
-            })
-        }
-        )
+            });
+        });
+    } catch (err) {
+        res.status(500).json({
+            message: "Internal server error",
+            status: false
+        });
     }
-}
+};
