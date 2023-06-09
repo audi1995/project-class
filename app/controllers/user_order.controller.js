@@ -1,5 +1,7 @@
 const { User_order } = require('../models/index.model')
 const{createInvoice}= require("../helpers/invoice")
+const emailSender = require('../helpers/nodemailer');
+
 
 exports.create = async (req, res) => {
     try {
@@ -9,7 +11,9 @@ exports.create = async (req, res) => {
                 status: false
             })
         } else {
+            
             let invoice = await createInvoice();
+            emailSender.sendEmail(req.userdata.email, `Greetings from our company`, `Hello, ${req.userdata.name} order has been submitted successfully.`,)
             await User_order(req.body)
                 .save()
                 .then((docs) => {
