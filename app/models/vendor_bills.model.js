@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 let vendor_bills_Schema = new Schema(
   {
-    vendor: { type: Schema.Types.ObjectId, ref: "Vendor", required: true},
+    vendor_po: { type: Schema.Types.ObjectId, ref: "Vendor_Po", required: true},
     products: [
       {
         product: { type: Schema.Types.ObjectId, ref: "Product" },

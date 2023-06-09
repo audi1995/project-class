@@ -16,7 +16,7 @@ exports.create = async (req, res) => {
                     })
                 })
                 .catch((err) => {
-                    res.status(401).json({
+                    res.status(422).json({
                         mesaage: err.message,
                         status: false
                     })
@@ -30,9 +30,7 @@ exports.create = async (req, res) => {
 
 exports.index = async (req, res) => {
     try {
-        let result = req.userdata;
-        console.log("bhfv", result);
-        if (result.role == "admin" || result.role == "vendor") {
+        if (req.userdata.role == "admin" || req.userdata.role == "vendor") {
             let page = req.query.page ? parseInt(req.query.page) : 1;
             let limit = req.query.limit ? parseInt(req.query.limit) : 5;
             let skip = page > 1 ? (page - 1) * limit : 0;
@@ -76,7 +74,7 @@ exports.show = async (req, res) => {
                 })
             })
         } else {
-            res.status(500).json({
+            res.status(422).json({
                 message: err.message,
                 status: false
             })
@@ -93,9 +91,8 @@ exports.show = async (req, res) => {
 
 exports.update = async (req, res) => {
     try {
-        let result = req.userdata;
 
-        if (result.role === "admin") {
+        if (req.userdata.role === "admin") {
             let object = {};
 
             if (req.body.product && req.body.product !== "") {
@@ -150,16 +147,13 @@ exports.update = async (req, res) => {
 
 exports.destroy = async (req, res) => {
     try {
-        let result = req.userdata;
-        let docId = req.params.id;
-
-        if (result.role !== "admin") {
+        if (req.userdata.role !== "admin") {
             res.status(401).json({
                 message: "You are not allowed to delete requirement",
                 status: false
             });
         } else {
-            await Publish_Requirment.deleteOne({ _id: docId })
+            await Publish_Requirment.deleteOne({ _id: req.params.id },)
                 .then(() => {
                     res.status(200).json({
                         message: "Requirement deleted successfully",

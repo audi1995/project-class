@@ -1,4 +1,4 @@
-const { vendor_bills } = require('../models/index.model')
+const { vendor_bills, Vendor_Po } = require('../models/index.model')
 const{createInvoice}= require("../helpers/invoice")
 
 exports.create = async (req, res) => {
@@ -20,43 +20,47 @@ exports.create = async (req, res) => {
                     });
                 })
                 .catch((err) => {
-                    res.status(401).json({
+                    res.status(422).json({
                         message: err.message,
                         status: false,
                     });
                 });
         }
     } catch (err) {
-        res.status(422).json(err);
+        res.status(500).json(err);
     }
 };
 
 exports.index = async (req, res) => {
     try {
-        if (req.userdata.role !== "admin") {
-            res.status(401).json({
-                message: "invalid vendor",
-                status: false
-            })
-        } else {
-            let page = req.query.page ? parseInt(req.query.page) : 1;
-            let limit = req.query.limit ? parseInt(req.query.limit) : 5;
-            let skip = page > 1 ? (page - 1) * limit : 0;
-
-            const bill = await vendor_bills.find().skip(skip).limit(limit);
-            if (!bill) {
-                res.status(404).json({
-                    message: "bill not found",
-                    status: false,
-                });
-            } else {
-                res.status(200).json({
-                    message: "bill retrieved successfully",
-                    status: true,
-                    data: bill,
-                });
-            }
+        let page = req.query.page ? parseInt(req.query.page) : 1;
+        let limit = req.query.limit ? parseInt(req.query.limit) : 5;
+        let skip = page > 1 ? (page - 1) * limit : 0;
+        const bills = await vendor_bills.find().skip(skip).limit(limit);
+        if (!bills || bills.length === 0) {
+            res.status(404).json({
+                message: "No bills found",
+                status: false,
+            });
+            return;
         }
+
+        let vendor_po_ids = bills.map((bill) => bill.vendor_po);
+        let pos = await Vendor_Po.find({ _id: { $in: vendor_po_ids } });
+
+        if (req.userdata.role !== "admin" || req.userdata.id !== pos[0].vendor) {
+            res.status(401).json({
+                message: "Invalid vendor",
+                status: false,
+            });
+            return;
+        }
+
+        res.status(200).json({
+            message: "Bills retrieved successfully",
+            status: true,
+            data: bills,
+        });
     } catch (err) {
         res.status(500).json({
             message: err.message,
@@ -68,14 +72,15 @@ exports.index = async (req, res) => {
 
 exports.show = async (req, res) => {
     try {
-        if (req.userdata.role !== "user") {
-            res.status(422).json({
+        if (req.userdata.role !== "vendor") {
+            res.status(401).json({
                 message: "invalid vendor",
                 status: false
             })
         } else {
 
             const bill = await vendor_bills.findById(req.params.id);
+            console.log(bill);
             if (!bill) {
                 res.status(404).json({
                     message: "bill not found",

@@ -4,44 +4,42 @@ const bcrypt = require("bcrypt");
 var jwt = require("jsonwebtoken");
 const saltRounds = 10;
 var { generateWebToken } = require("../middlewares/jwt");
-
+const emailSender = require('../helpers/nodemailer');
 
 exports.create = async (req, res) => {
     try {
         let result = validator.both(req.body)
         if (result.status === false) {
             console.log("hbcfd");
-            res.status(401).json(result);
+            res.status(422).json(result);
         } else {
             let count = await Vendor.countDocuments({
                 $or: [{ email: req.body.email }, { phone: req.body.phone }],
             });
             if (count > 0) {
-                res.status(401).json({
+                res.status(403).json({
                     mesaage: "vendor already exists.",
                     status: false
                 })
             } else {
                 req.body.password = await bcrypt.hash(req.body.password, saltRounds);
-                
-                await Vendor(req.body)
-                    .save()
-                    .then((docs) => {
-                        res.status(200).json({
-                            message: "vendor created successfully",
-                            status: true,
-                            data: docs
-                        })
-                    }).catch((err) => {
-                        res.status(422).json({
-                            message: err.message,
-                            status: false
-                        })
-                    });
+                let user = await Vendor(req.body).save()
+                if (!user) {
+                    res.status(422).json({
+                        message: "Vendor not created",
+                        status: false
+                    })
+                } else {
+                    emailSender.sendEmail(user.email, `Greetings from our company`, `Hello, ${user.name} Welcom to our website`,)
+                    res.status(201).json({
+                        message: "Vendor created successfully.",
+                        data: user
+                    })
+                }
             }
         }
     } catch (err) {
-        res.status(422).json(err)
+        res.status(500).json(err)
     }
 }
 
@@ -75,44 +73,51 @@ exports.index = async (req, res) => {
         }
     }
     catch (err) {
-        res.statu422s().json(err)
+        res.statu422s(500).json(err)
     }
 }
 
 
 exports.show = async (req, res) => {
     try {
-        await Vendor.findOne({ _id: req.params.id }).then((docs) => {
-            res.status(200).json({
-                message: "vendor retrieved successfully",
-                data: docs,
-                status: true
-            })
-        }).catch((err) => {
-            res.status(422).json({
-                message: err.message,
+        if (req.userdata.id !== req.params.id) {
+            res.status(401).json({
+                message: "User does not exist",
                 status: false
             })
-        })
+        } else {
+
+            await Vendor.findOne({ _id: req.params.id }).then((docs) => {
+                res.status(200).json({
+                    message: "vendor retrieved successfully",
+                    data: docs,
+                    status: true
+                })
+            }).catch((err) => {
+                res.status(422).json({
+                    message: err.message,
+                    status: false
+                })
+            })
+        }
     } catch (err) {
-        res.status(422).json(err)
+        res.status(500).json(err)
     }
 }
 
 
 exports.update = async (req, res) => {
     try {
-        if (req.userdata.role === "vendor" || req.userdata.role === "admin") {
+        if (req.userdata.role === "vendor" && req.userdata.id === req.params.id) {
             let result = validator.both(req.body);
             if (result.status === false) {
-                res.status(401).json(result);
+                res.status(422).json(result);
             } else {
                 let object = {};
                 if (req.body.email && req.body.email !== "")
                     object.email = req.body.email;
                 if (req.body.phone && req.body.phone !== "")
                     object.phone = req.body.phone;
-
                 if (req.body.name && req.body.name !== "")
                     object.name = req.body.name;
                 if (req.body.gender && req.body.gender !== "")
@@ -134,63 +139,70 @@ exports.update = async (req, res) => {
                         });
                     })
                     .catch((err) => {
-                        res.status(401).json({
+                        res.status(422).json({
                             message: err.message,
                             status: false
                         });
                     });
             }
-        } else {
-            res.status(401).json({
-                message: "Only vendors or admins can update vendor profiles",
-                status: false
-            });
+        } else if (req.userdata.role === "admin") {
+            let object = {};
+            if (req.body.isApproved && req.body.isApproved !== "")
+                object.isApproved = req.body.isApproved;
+            await Vendor
+                .updateOne({ _id: req.params.id }, { $set: object })
+                .then((result) => {
+                    res.status(200).json({
+                        message: "Vendor updated successfully",
+                        status: true,
+                        data: result
+                    }); ''
+                })
+                .catch((err) => {
+                    res.status(422).json({
+                        message: err.message,
+                        status: false
+                    });
+                });
+
         }
     } catch (err) {
-        res.status(422).json(err);
+        res.status(500).json(err);
     }
 };
+
 
 
 
 exports.destroy = async (req, res) => {
     try {
-        if (req.userdata.role == "admin") {
-            let authUser = req.userdata;
-            docId = req.params.id;
-            console.log(authUser, docId);
-
-            if (authUser.Account_type === "Admin") {
-                await User
-                    .deleteOne({ _id: docId })
-                    .then((docs) => {
-                        res.status(200).json({
-                            message: "vendor removed successfully",
-                            status: true,
-                            data: {}
-                        })
-
-                    })
-                    .catch((err) => {
-                        res.status(422).json({
-                            message: err.message,
-                            status: false
-                        })
+        if (req.userdata.role === "admin") {
+            const docId = req.params.id;
+            await User
+                .deleteOne({ _id: docId })
+                .then(() => {
+                    res.status(200).json({
+                        message: "Vendor removed successfully",
+                        status: true,
+                        data: {}
                     });
-            } else {
-                res.status(422).json({
-                    message: err.message,
-                    status: false
                 })
-            }
+                .catch((err) => {
+                    res.status(422).json({
+                        message: err.message,
+                        status: false
+                    });
+                });
         }
     } catch (err) {
         res.status(500).json({
             message: err.message,
             status: false
-        })
+        });
     }
 };
+
+
 
 
 exports.login = async (req, res) => {
@@ -201,7 +213,7 @@ exports.login = async (req, res) => {
     } else {
         await Vendor.findOne({ email: req.body.email }).then((docs) => {
             if (!docs) {
-                res.status(422).json({
+                res.status(403).json({
                     message: "vendor not found",
                     status: false
                 })

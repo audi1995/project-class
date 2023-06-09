@@ -11,7 +11,7 @@ exports.create = async (req, res) => {
     try {
         let result = validator.both(req.body)
         if (result.status === false) {
-            res.status(401).json(result);
+            res.status(422).json(result);
         } else {
             let count = await User.countDocuments({
                 $or: [{ email: req.body.email }, { phone: req.body.phone }],
@@ -25,32 +25,17 @@ exports.create = async (req, res) => {
                 req.body.password = await bcrypt.hash(req.body.password, saltRounds);
                 let user = await User(req.body).save()
                 if (!user) {
-                    res.status(401).json({
+                    res.status(400).json({
                         message: "user not created",
                         status: false
                     })
                 } else {
-                    console.log(user.email);
                     emailSender.sendEmail(user.email, `Greetings from our company`, `Hello, ${user.name} Welcom to our website`,)
-                    res.status(200).json({
+                    res.status(201).json({
                         message: "user created successfully.",
                         data: user
                     })
                 }
-                // .then((docs) => {
-                //     emailSender.sendEmail(docs.email)
-                //     res.status(201).json({
-                //         message: "User created successfully",
-                //         status: true,
-                //         data: docs
-                //     })
-                // })
-                // .catch((err) => {
-                //     res.status(401).json({
-                //         mesaage: "user already exists.",
-                //         status: false
-                //     })
-                // });
             }
         }
     } catch (err) {
@@ -92,20 +77,27 @@ exports.index = async (req, res) => {
 
 exports.show = async (req, res) => {
     try {
-        await User.findOne({ _id: req.params.id }).then((docs) => {
-            res.status(200).json({
-                message: "user retrieved successfully",
-                data: docs,
-                status: true
-            })
-        }).catch((err) => {
-            res.status(422).json({
-                message: err.message,
+        if (req.userdata.id !== req.params.id) {
+            res.status(401).json({
+                message: "User does not exist",
                 status: false
             })
-        })
+        } else {
+            await User.findOne({ _id: req.params.id }).then((docs) => {
+                res.status(200).json({
+                    message: "user retrieved successfully",
+                    data: docs,
+                    status: true
+                })
+            }).catch((err) => {
+                res.status(422).json({
+                    message: err.message,
+                    status: false
+                })
+            })
+        }
     } catch (err) {
-        res.status(422).json(err)
+        res.status(500).json(err)
     }
 }
 
@@ -116,62 +108,61 @@ exports.update = async (req, res) => {
         if (result.status === false) {
             res.status(401).json(result);
         } else {
-            let object = {};
-            if (req.body.email && req.body.email != "") {
-                object.email = req.body.email;
-                if (req.body.phone && req.body.phone != "") {
+            if (req.userdata.role === "admin" || req.userdata.id !== req.params.id) {
+                res.status(422).json({
+                    message: "not authorized"
+                });
+            } else {
+                let object = {};
+                if (req.body.email && req.body.email !== "") {
+                    object.email = req.body.email;
+                }
+                if (req.body.phone && req.body.phone !== "") {
                     object.phone = req.body.phone;
                 }
-                if (req.body.name && req.body.name != "") {
+                if (req.body.name && req.body.name !== "") {
                     object.name = req.body.name;
-                    if (req.body.gender && req.body.gender != "")
-                        object.gender = req.body.gender;
-                    if (req.body.name && req.body.name != "")
-                        object.name = req.body.name;
-                    if (req.body.address && req.body.address != "")
-                        object.address = req.body.address;
-                    {
-                        console.log("req.params", req.params);
-                        console.log("req.userdata.id", req.userdata.id);
-
-                        if (req.userdata.id === req.params.id) {
-                            console.log("object", object);
-
-                            await User
-                                .updateOne({ _id: req.params.id }, { $set: object })
-                                .then((docs) => {
-                                    res.status(200).json({
-                                        message: "email updated successfully",
-                                        status: true,
-                                        data: docs
-                                    })
-                                })
-                                .catch((err) => {
-                                    res.status(401).json({
-                                        message: err.message, status: false
-                                    })
-                                });
-                        } else {
+                }
+                if (req.body.gender && req.body.gender !== "") {
+                    object.gender = req.body.gender;
+                }
+                if (req.body.address && req.body.address !== "") {
+                    object.address = req.body.address;
+                }
+                if (req.userdata.id === req.params.id) {
+                    await User.updateOne({ _id: req.params.id }, { $set: object })
+                        .then((docs) => {
+                            res.status(202).json({
+                                message: "email updated successfully",
+                                status: true,
+                                data: docs
+                            });
+                        })
+                        .catch((err) => {
                             res.status(422).json({
-                                message: err.message, status: false
-                            })
-                        }
-                    }
+                                message: err.message,
+                                status: false
+                            });
+                        });
+                } else {
+                    res.status(401).json({
+                        message: "not authorized",
+                        status: false
+                    });
                 }
             }
-
         }
     } catch (err) {
-        res.status(422).json(err)
+        res.status(422).json(err);
     }
-}
+};
 
 
 exports.destroy = async (req, res) => {
     try {
         let authUser = req.userdata;
         docId = req.params.id;
-        if (authUser.role == "admin"){
+        if (authUser.role == "admin") {
             await User
                 .deleteOne({ _id: docId })
                 .then((docs) => {
@@ -211,7 +202,7 @@ exports.login = async (req, res) => {
     } else {
         await User.findOne({ email: req.body.email }).then((docs) => {
             if (!docs) {
-                res.status(422).json({
+                res.status(404).json({
                     message: "User not found",
                     status: false
                 })

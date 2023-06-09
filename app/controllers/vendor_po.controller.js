@@ -1,10 +1,10 @@
-const { Vendor_Po } = require('../models/index.model')
+const { Vendor_Po, Vendor } = require('../models/index.model')
+const emailSender = require('../helpers/nodemailer');
 
 exports.create = async (req, res) => {
     try {
-        let result = req.userdata;
-        if (result.role !== "vendor") {
-            res.status(422).json(result);
+        if (req.userdata.role !== "vendor") {
+            res.status(401).json(result);
         } else {
             await Vendor_Po(req.body)
                 .save()
@@ -16,7 +16,7 @@ exports.create = async (req, res) => {
                     })
                 })
                 .catch((err) => {
-                    res.status(401).json({
+                    res.status(422).json({
                         mesaage: err.message,
                         status: false
                     })
@@ -24,7 +24,7 @@ exports.create = async (req, res) => {
         }
     }
     catch (err) {
-        res.status(422).json(err)
+        res.status(500).json(err)
     }
 
 
@@ -32,8 +32,7 @@ exports.create = async (req, res) => {
 
 exports.index = async (req, res) => {
     try {
-        let result = req.userdata;
-        if (result.role == "admin" || result.role == "vendor") {
+        if (req.userdata.role == "admin" || req.userdata.role == "vendor") {
             let page = req.query.page ? parseInt(req.query.page) : 1;
             let limit = req.query.limit ? parseInt(req.query.limit) : 5;
             let skip = page > 1 ? (page - 1) * limit : 0;
@@ -51,13 +50,13 @@ exports.index = async (req, res) => {
                 })
             })
         } else {
-            res.status(500).json({
+            res.status(401).json({
                 message: err.message,
                 status: false
             })
         }
     } catch (err) {
-        res.status(422).json(err)
+        res.status(500).json(err)
     }
 }
 
@@ -78,14 +77,14 @@ exports.show = async (req, res) => {
                 })
             })
         } else {
-            res.status(500).json({
+            res.status(422).json({
                 message: "err.message",
                 status: false
             })
 
         }
     } catch (err) {
-        res.status(400).json({
+        res.status(500).json({
             message: err.message,
             status: false
         })
@@ -94,7 +93,11 @@ exports.show = async (req, res) => {
 
 exports.update = async (req, res) => {
     try {
-        if (req.userdata.role === "vendor") {
+        let vendor_po = await Vendor_Po.findOne({ _id: req.params.id });
+        console.log(vendor_po.vendor);
+        let vendor = await Vendor.findOne({_id: vendor_po.vendor})
+        console.log(vendor);
+        if (req.userdata.role === "vendor" && req.userdata.id === vendor_po.vendor.id) {
             let object = {};
             if (req.body.product && req.body.product !== "") {
                 object.product = req.body.product;
@@ -111,22 +114,21 @@ exports.update = async (req, res) => {
             if (req.body.will_deliver_within && req.body.will_deliver_within !== "") {
                 object.will_deliver_within = req.body.will_deliver_within;
             }
-
-            const updatedproduct = await Vendor_Po.findByIdAndUpdate(
+            const updatedProduct = await Vendor_Po.findByIdAndUpdate(
                 req.params.id,
                 { $set: object },
                 { new: true }
             );
 
-            if (updatedproduct) {
+            if (updatedProduct) {
                 res.status(200).json({
-                    message: "po updated successfully",
+                    message: "PO updated successfully",
                     status: true,
-                    data: updatedproduct
+                    data: updatedProduct
                 });
             } else {
                 res.status(404).json({
-                    message: "po not found",
+                    message: "PO not found",
                     status: false
                 });
             }
@@ -135,28 +137,28 @@ exports.update = async (req, res) => {
             if (req.body.isApproved && req.body.isApproved !== "") {
                 object.isApproved = req.body.isApproved;
             }
-
-            const updatedproduct = await Vendor_Po.findByIdAndUpdate(
+            const updatedProduct = await Vendor_Po.findByIdAndUpdate(
                 req.params.id,
                 { $set: object },
                 { new: true }
             );
 
-            if (updatedproduct) {
+            if (updatedProduct) {
+                emailSender.sendEmail(vendor.email, `Approved your po`, `Hello, ${vendor.company_name} your po has been approved`)
                 res.status(200).json({
-                    message: "po updated successfully",
+                    message: "PO updated successfully",
                     status: true,
-                    data: updatedproduct
+                    data: updatedProduct
                 });
             } else {
                 res.status(404).json({
-                    message: "po not found",
+                    message: "PO not found",
                     status: false
                 });
             }
         } else {
             res.status(401).json({
-                message: "Only admin or vendor can update po",
+                message: "Only admin or vendor can update PO",
                 status: false
             });
         }
@@ -170,31 +172,36 @@ exports.update = async (req, res) => {
 
 
 exports.destroy = async (req, res) => {
-    let result = req.userdata;
-     
-    if (req.userdata.role != "vendor") {
-        res.status(401).json({
-            message: "You are not allowed to delete po",
-            status: false
-        })
-    }
-    else {
-        await Vendor_Po.deleteOne({ _id: req.params.id }).then((docs) => {
-            res.status(200).json({
-                message: "po deleted successfully",
-                status: true,
-                data: {}
-            })
-        }
-        ).catch((err) => {
+    try {
+        let vendor_po = await Vendor_Po.findOne({ _id: req.params.id });
+        if (req.userdata.role === "vendor" && req.userdata.id === vendor_po.vendor.id) {
+            await Vendor_Po.deleteOne({ _id: req.params.id })
+                .then((docs) => {
+                    res.status(200).json({
+                        message: "PO deleted successfully",
+                        status: true,
+                        data: {}
+                    });
+                })
+                .catch((err) => {
+                    res.status(422).json({
+                        message: err.message,
+                        status: false
+                    });
+                });
+        } else {
             res.status(422).json({
-                message: err.message,
+                message: "Unauthorized access: Only the vendor who created the PO can delete it",
                 status: false
-            })
-        })
+            });
+        }
+    } catch (err) {
+        res.status(500).json({
+            message: "Internal server error",
+            status: false
+        });
     }
-}
-
+};
 
 
 
