@@ -1,4 +1,4 @@
-module.exports = function (app){
+module.exports = function (app) {
     app.use('/users', require('./user.route'))
     app.use('/vendors', require('./vendor.route'))
     app.use('/products', require("./product.route"))
@@ -9,4 +9,4 @@ module.exports = function (app){
     app.use('/user_orders', require('./user_order.route'))
     app.use('/vendors_bills', require('./vendor_bills.route'))
     app.use('/dealer_bills', require('./dealer_bills.route'))
-    }
+}

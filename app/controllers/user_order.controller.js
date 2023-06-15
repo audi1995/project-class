@@ -11,7 +11,6 @@ exports.create = async (req, res) => {
                 status: false
             })
         } else {
-            
             let invoice = await createInvoice();
             emailSender.sendEmail(req.userdata.email, `Greetings from our company`, `Hello, ${req.userdata.name} order has been submitted successfully.`,)
             await User_order(req.body)
@@ -34,7 +33,7 @@ exports.create = async (req, res) => {
         res.status(422).json(err);
     }
 };
-
+ 
 
 
 exports.show = async (req, res) => {

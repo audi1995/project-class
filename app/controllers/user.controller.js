@@ -9,8 +9,8 @@ const emailSender = require('../helpers/nodemailer');
 
 exports.create = async (req, res) => {
     try {
-        let result = validator.both(req.body)
-        if (result.status === false) {
+        let result = validator.both(req.body);
+        if (!result.status) {
             res.status(422).json(result);
         } else {
             let count = await User.countDocuments({
@@ -18,30 +18,30 @@ exports.create = async (req, res) => {
             });
             if (count > 0) {
                 res.status(401).json({
-                    mesaage: "user already exists.",
+                    message: "User already exists.",
                     status: false
-                })
+                });
             } else {
                 req.body.password = await bcrypt.hash(req.body.password, saltRounds);
-                let user = await User(req.body).save()
+                let user = await User(req.body).save();
                 if (!user) {
                     res.status(400).json({
-                        message: "user not created",
+                        message: "User not created.",
                         status: false
-                    })
+                    });
                 } else {
-                    emailSender.sendEmail(user.email, `Greetings from our company`, `Hello, ${user.name} Welcom to our website`,)
+                   await emailSender.sendEmail(user.email, `Greetings from our company`, `Hello, ${user.name} Welcome to our website`);
                     res.status(201).json({
-                        message: "user created successfully.",
+                        message: "User created successfully.",
                         data: user
-                    })
+                    });
                 }
             }
         }
     } catch (err) {
-        res.status(422).json(err)
+        res.status(422).json(err);
     }
-}
+};
 
 
 exports.index = async (req, res) => {

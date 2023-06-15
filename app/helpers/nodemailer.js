@@ -15,7 +15,7 @@ var transporter = nodemailer.createTransport({
 //   text: 'That was easy!'
 // };
 
-exports. sendEmail=(email, subject, body)=> {
+exports.sendEmail=async(email, subject, body)=> {
     var mailOptions = {
       from: 'gaudi3490@gmail.com',
       to: email,
@@ -23,7 +23,7 @@ exports. sendEmail=(email, subject, body)=> {
       text: body
     };
     
-    transporter.sendMail(mailOptions, function(error, info){
+    await transporter.sendMail(mailOptions, function(error, info){
         if (error) {
           console.log(error);
         } else {

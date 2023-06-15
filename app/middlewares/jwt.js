@@ -1,14 +1,12 @@
 var jwt = require('jsonwebtoken');
 const secret = "abcde";
-const {User, Vendor} = require("../models/index.model");
-
+const { User, Vendor } = require("../models/index.model");
 
 exports.generateWebToken = (docId) => {
   return jwt.sign({
     data: docId,
   }, secret, { expiresIn: 60 * 60 * 24 * 7 });
 }
-
 
 exports.verifyWebToken = async (req, res, next) => {
   if (req.headers.authorization) {

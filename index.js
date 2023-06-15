@@ -11,10 +11,12 @@ app.use(express.json());
 app.use(bodyParser.json());
 router(app)
 
-con.on("open", () => {
-  console.log("Hello World");
-});
+// con.on("open", () => {
+//   console.log("Hello World");
+// });
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 })
+
+module.exports = app;
